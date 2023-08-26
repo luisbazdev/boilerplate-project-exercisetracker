@@ -74,11 +74,25 @@ app.get("/api/users/:_id/logs", function (req, res) {
   const { _id } = req.params;
   let { from, to, limit } = req.query;
 
-  from = new Date(from);
-  to = new Date(to);
+  let filter = {
+    userId: _id,
+  };
 
-  if (from === "Invalid Date" || to === "Invalid Date") {
-    res.json({ error: "From or To query params are invalid" });
+  if (from || to) filter.date = {};
+  if (from) {
+    from = new Date(from);
+    if (from == "Invalid Date") {
+      return res.json({ error: "From query param is invalid" });
+    }
+    filter.date.$gte = from;
+  }
+
+  if (to) {
+    to = new Date(to);
+    if (to == "Invalid Date") {
+      return res.json({ error: "To query param is invalid" });
+    }
+    filter.date.$lte = to;
   }
 
   let _limit = 0;
@@ -87,7 +101,7 @@ app.get("/api/users/:_id/logs", function (req, res) {
 
   User.findById(_id).then((data) => {
     const username = data.username;
-    Exercise.find({ userId: _id })
+    Exercise.find(filter)
       .limit(_limit)
       .exec()
       .then((data2) => {
